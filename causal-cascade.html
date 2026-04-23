@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Causal Cascade · NSS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06090E;--bg-1:#0A0D12;--surface:#0F141D;--surface-2:#151C28;--surface-3:#1C2434;--border:#1F2735;--border-2:#2B3446;--divider:#171D27;--ink:#F5F7FA;--ink-2:#C8D0DC;--ink-3:#8B95A3;--ink-4:#5A6574;--accent:#6DD9FF;--accent-bright:#8EE3FF;--accent-soft:rgba(109,217,255,.10);--accent-border:rgba(109,217,255,.28);--warm:#FFB186;--warm-soft:rgba(255,177,134,.10);--danger:#FF7A8A;--danger-soft:rgba(255,122,138,.12);--success:#7DDBB0;--success-soft:rgba(125,219,176,.10);--violet:#B8A0FF;--violet-soft:rgba(184,160,255,.10);--display:'Instrument Serif',Georgia,serif;--ui:'Inter',-apple-system,system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,Menlo,monospace;--r-sm:6px;--r:10px;--r-lg:14px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased;height:100%;overflow:hidden}
+.bar{position:fixed;top:0;left:0;right:0;z-index:30;background:rgba(6,9,14,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.bar-in{padding:10px clamp(14px,2.5vw,32px);display:flex;justify-content:space-between;align-items:center;gap:20px;font-family:var(--mono);font-size:11.5px;color:var(--ink-3);flex-wrap:wrap}
+.bar .home{color:var(--ink-2);text-decoration:none;font-family:var(--ui);font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:8px}
+.bar .home::before{content:"←";color:var(--accent)}
+.bar .home:hover{color:var(--accent)}
+.bar .brand{color:var(--ink);font-family:var(--ui);font-size:13px;font-weight:500}
+.bar .brand::before{content:"";display:inline-block;width:6px;height:6px;background:var(--accent);border-radius:50%;margin-right:8px;vertical-align:1px;box-shadow:0 0 10px rgba(109,217,255,.6)}
+.bar .sep{color:var(--ink-4);opacity:.6}
+.frame{display:grid;grid-template-columns:290px 1fr 320px;height:calc(100vh - 45px);margin-top:45px;overflow:hidden}
+@media(max-width:1200px){.frame{grid-template-columns:250px 1fr}}
+@media(max-width:900px){.frame{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}}
+.side{background:var(--surface);border-right:1px solid var(--border);overflow:auto;display:flex;flex-direction:column}
+.side.r{border-right:none;border-left:1px solid var(--border)}
+.side::-webkit-scrollbar{width:4px}
+.side::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:2px}
+.h-block{padding:18px 20px 12px;border-bottom:1px solid var(--border)}
+.h-block .eye{font-family:var(--mono);font-size:10.5px;color:var(--ink-4);margin-bottom:6px;letter-spacing:.04em}
+.h-block h2{font-family:var(--display);font-size:26px;font-weight:400;margin:0;letter-spacing:-.01em;line-height:1.1}
+.h-block h2 i{font-style:italic;color:var(--accent)}
+.h-block p{margin:6px 0 0;color:var(--ink-3);font-size:12px;line-height:1.45}
+.sec{padding:14px 20px 6px;font-family:var(--mono);font-size:10.5px;color:var(--ink-4);letter-spacing:.04em;border-top:1px solid var(--divider);margin-top:4px}
+.ctl{padding:12px 20px;border-bottom:1px solid var(--divider)}
+.ctl label{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--ui);font-size:12px;color:var(--ink-2);margin-bottom:8px;font-weight:500}
+.ctl label .v{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.ctl .hint{font-family:var(--mono);font-size:10px;color:var(--ink-4);margin-top:5px;line-height:1.4}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;background:transparent;height:20px;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border-2);border-radius:2px}
+input[type=range]::-moz-range-track{height:3px;background:var(--border-2);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;background:var(--accent);border:2px solid var(--surface);border-radius:50%;margin-top:-6px}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--accent);border:2px solid var(--surface);border-radius:50%}
+.seg{display:inline-flex;background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-sm);padding:2px;gap:2px;width:100%}
+.seg button{flex:1;background:transparent;border:none;color:var(--ink-3);font-family:var(--mono);font-size:10.5px;padding:6px 6px;cursor:pointer;border-radius:4px;transition:.12s;font-weight:500;letter-spacing:.02em}
+.seg button.on{background:var(--accent);color:#06121a}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 12px;background:var(--accent);color:#06121a;border:none;font-family:var(--ui);font-size:12.5px;font-weight:500;cursor:pointer;transition:.15s;border-radius:var(--r-sm);width:100%}
+.btn:hover{background:var(--accent-bright)}
+.btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--border-2)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-row{display:flex;gap:6px;margin-top:8px}.btn-row .btn{flex:1}
+.node-ctrl{padding:10px 20px;border-bottom:1px solid var(--divider);cursor:pointer;transition:.12s}
+.node-ctrl:hover{background:var(--surface-2)}
+.node-ctrl.sel{background:var(--accent-soft);border-left:2px solid var(--accent);padding-left:18px}
+.node-ctrl .h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px}
+.node-ctrl .n{font-family:var(--ui);font-size:12px;color:var(--ink-2);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.node-ctrl .p{font-family:var(--display);font-size:17px;color:var(--accent);font-weight:400;letter-spacing:-.01em;line-height:1}
+.node-ctrl .bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.node-ctrl .bar-fill{display:block;height:100%;background:linear-gradient(90deg,var(--violet),var(--accent));transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.node-ctrl .clamp{font-family:var(--mono);font-size:9px;padding:1px 5px;border-radius:3px;letter-spacing:.04em;margin-left:6px}
+.node-ctrl .clamp.t{background:var(--success-soft);color:var(--success);border:1px solid rgba(125,219,176,.3)}
+.node-ctrl .clamp.f{background:var(--danger-soft);color:var(--danger);border:1px solid rgba(255,122,138,.3)}
+.canvas-wrap{position:relative;overflow:hidden;background:radial-gradient(ellipse at center,rgba(109,217,255,.04),transparent 60%)}
+#graph{width:100%;height:100%;cursor:grab;display:block}
+#graph.drag{cursor:grabbing}
+.g-over{position:absolute;left:20px;top:20px;display:flex;flex-direction:column;gap:8px;z-index:3;pointer-events:none}
+.g-over .chip{background:rgba(15,20,29,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border-2);padding:6px 12px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);border-radius:100px;display:inline-flex;align-items:center;gap:8px;width:fit-content;pointer-events:auto}
+.g-over .chip.a{color:var(--accent);border-color:var(--accent-border);background:rgba(109,217,255,.1)}
+.g-over .chip.w{color:var(--warm);border-color:rgba(255,177,134,.3);background:rgba(255,177,134,.1)}
+.g-over .chip.v{color:var(--violet);border-color:rgba(184,160,255,.3);background:rgba(184,160,255,.1)}
+.g-legend{position:absolute;right:14px;bottom:14px;background:rgba(15,20,29,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-family:var(--mono);font-size:10px;color:var(--ink-3);line-height:1.7;z-index:3}
+.g-legend .h{color:var(--ink);font-weight:500;letter-spacing:.04em;margin-bottom:4px}
+.g-legend .sw{display:inline-block;width:9px;height:9px;vertical-align:middle;margin-right:6px;border-radius:50%}
+.g-zoom{position:absolute;right:14px;top:14px;z-index:3;display:flex;flex-direction:column;gap:6px}
+.g-zoom button{width:30px;height:30px;background:rgba(15,20,29,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border-2);color:var(--ink-2);font-family:var(--mono);font-size:12px;cursor:pointer;border-radius:var(--r-sm);transition:.12s;display:flex;align-items:center;justify-content:center}
+.g-zoom button:hover{border-color:var(--accent);color:var(--accent)}
+.inspector{padding:14px 20px 20px}
+.inspector h4{font-family:var(--display);font-size:22px;color:var(--ink);margin:0 0 4px;font-weight:400;line-height:1.15;letter-spacing:-.01em}
+.inspector h4 i{font-style:italic;color:var(--accent)}
+.inspector .desc{color:var(--ink-3);font-size:12px;line-height:1.55;margin-bottom:14px}
+.dl{margin:0 0 16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-family:var(--mono);font-size:11px}
+.dl dt{color:var(--ink-4)}.dl dd{color:var(--ink-2);margin:0}
+.dl dd.a{color:var(--accent)}.dl dd.w{color:var(--warm)}.dl dd.g{color:var(--success)}.dl dd.r{color:var(--danger)}.dl dd.v{color:var(--violet)}
+.cpt{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:12px}
+.cpt h5{font-family:var(--mono);font-size:10px;color:var(--ink-4);letter-spacing:.04em;margin:0 0 8px}
+.cpt-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:3px 0;font-size:11px;font-family:var(--mono)}
+.cpt-row .p{color:var(--ink-3)}.cpt-row .v{color:var(--accent);text-align:right}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.actions button{flex:1;min-width:0;background:var(--surface-2);border:1px solid var(--border);color:var(--ink-2);font-family:var(--ui);font-size:11.5px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;transition:.12s;font-weight:500}
+.actions button:hover{border-color:var(--accent);color:var(--accent)}
+.actions button.at{background:var(--success);color:#06121a;border-color:var(--success)}
+.actions button.af{background:var(--danger);color:#06121a;border-color:var(--danger)}
+.actions button.ac{background:var(--violet);color:#06121a;border-color:var(--violet)}
+.sensi{margin-top:14px}
+.sensi h5{font-family:var(--mono);font-size:10px;color:var(--ink-4);letter-spacing:.04em;margin:0 0 8px}
+.srow{display:grid;grid-template-columns:1fr 60px 50px;gap:8px;align-items:center;padding:5px 0;font-family:var(--mono);font-size:10.5px;border-bottom:1px solid var(--divider)}
+.srow:last-child{border-bottom:none}
+.srow .n{color:var(--ink-2);font-family:var(--ui);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow .b{height:4px;background:var(--border);border-radius:2px;position:relative;overflow:hidden}
+.srow .b .f{position:absolute;top:0;height:100%;background:var(--accent);border-radius:2px;transition:width .5s}
+.srow .b .f.neg{background:var(--danger)}
+.srow .v{color:var(--accent);text-align:right;font-size:10.5px}
+.srow .v.neg{color:var(--danger)}
+.scenarios{display:flex;flex-direction:column;gap:4px;padding:8px 12px}
+.scenarios button{background:var(--surface-2);border:1px solid var(--border);color:var(--ink-2);font-family:var(--ui);font-size:11.5px;padding:8px 12px;border-radius:var(--r-sm);cursor:pointer;text-align:left;transition:.12s;line-height:1.3}
+.scenarios button:hover{border-color:var(--accent);color:var(--accent)}
+.scenarios button b{color:var(--accent);font-weight:500;display:block;margin-bottom:2px}
+.scenarios button span{font-family:var(--mono);font-size:10px;color:var(--ink-4)}
+@media(max-width:900px){.side{max-height:200px}.canvas-wrap{min-height:400px}}
+</style>
+</head>
+<body>
+<div class="bar"><div class="bar-in">
+  <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><a class="home" href="./index.html">Portfolio</a><span class="sep">/</span><span class="brand">Causal Cascade</span></div>
+  <div style="display:flex;gap:10px;align-items:center"><span>Bayesian network · Pearl's do-calculus · 18 nodes</span><span class="sep">/</span><span id="iter-count">— ms</span></div>
+</div></div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="h-block">
+      <div class="eye">Causal network</div>
+      <h2>Pearl's <i>do-calculus</i></h2>
+      <p>A Bayesian graph of the Iran theater. Intervene on any node (clamp TRUE or FALSE) to sever incoming edges and observe downstream propagation.</p>
+    </div>
+
+    <div class="ctl">
+      <div class="seg" id="mode">
+        <button data-m="observe" class="on">OBSERVE</button>
+        <button data-m="intervene">INTERVENE</button>
+        <button data-m="counterfactual">COUNTERFACT</button>
+      </div>
+      <div class="hint" id="mode-hint">Observational: marginal probabilities from priors alone.</div>
+    </div>
+
+    <div class="ctl">
+      <label><span>BP iterations</span><span class="v" id="v-iter">120</span></label>
+      <input type="range" min="20" max="400" value="120" step="10" id="s-iter">
+      <div class="hint">Monte Carlo samples per inference pass.</div>
+    </div>
+
+    <div class="ctl">
+      <button class="btn" id="btn-run">Propagate beliefs</button>
+      <div class="btn-row"><button class="btn ghost" id="btn-clear">Clear interventions</button></div>
+    </div>
+
+    <div class="sec">Quick scenarios</div>
+    <div class="scenarios">
+      <button data-sc="strike"><b>Authorize strike campaign</b><span>do(sustained=T)</span></button>
+      <button data-sc="dip"><b>Pursue Omani diplomacy</b><span>do(diplomacy=T)</span></button>
+      <button data-sc="hormuz"><b>Iran closes Hormuz</b><span>do(hormuz=T)</span></button>
+      <button data-sc="coalition"><b>Coalition fractures</b><span>do(coalition=F)</span></button>
+    </div>
+
+    <div class="sec">Nodes · sorted by P</div>
+    <div id="nlist"></div>
+  </aside>
+
+  <main class="canvas-wrap">
+    <svg id="graph"></svg>
+    <div class="g-over">
+      <span class="chip a" id="c-mode">OBSERVE · marginal</span>
+      <span class="chip" id="c-inv">0 interventions</span>
+      <span class="chip v" id="c-cf" style="display:none">Counterfactual: baseline locked</span>
+    </div>
+    <div class="g-zoom">
+      <button id="z-in">+</button><button id="z-out">−</button><button id="z-reset" style="font-size:10px">⟲</button>
+    </div>
+    <div class="g-legend">
+      <div class="h">P(NODE = TRUE)</div>
+      <div><span class="sw" style="background:#7DDBB0"></span>&gt; 0.70</div>
+      <div><span class="sw" style="background:#6DD9FF"></span>0.40 – 0.70</div>
+      <div><span class="sw" style="background:#FFB186"></span>0.20 – 0.40</div>
+      <div><span class="sw" style="background:#FF7A8A"></span>≤ 0.20</div>
+      <div><span class="sw" style="background:#B8A0FF"></span>intervened · do()</div>
+    </div>
+  </main>
+
+  <aside class="side r">
+    <div class="h-block">
+      <div class="eye" id="insp-eye">INSPECTOR</div>
+      <h2 id="insp-title">No selection</h2>
+      <p id="insp-sub">Click a node to inspect its parents, CPT, belief, and sensitivity to upstream interventions.</p>
+    </div>
+    <div class="inspector" id="insp"></div>
+  </aside>
+</div>
+
+<script>
+/* ============================================================
+   Causal Cascade — Bayesian Network
+   
+   Semantics:
+   - Each node is a binary event with a prior and parent weights.
+   - P(node=T | parents) = sigmoid(intercept + Σ w_i · parent_i_is_T)
+   - Inference: forward Monte Carlo sampling in topological order.
+   - do(X=v): clamp X to v, severing incoming edges (Pearl 2009).
+   - Counterfactual: compute P under both observation and intervention,
+     show Δ per node.
+   ============================================================ */
+
+// Node definitions: id, name, desc, x, y, intercept, parents:[{id,w}]
+// If intercept=null, node is a root with prior
+const NODES = [
+  // Roots
+  {id:'sustained', name:'Sustained strike campaign', desc:'U.S. maintains 90+ day strike tempo against Houthi targets', prior:.55, group:1, x:120, y:120},
+  {id:'diplomacy', name:'Omani diplomatic channel', desc:'Active back-channel ceasefire negotiations via Oman', prior:.40, group:1, x:120, y:260},
+  {id:'coalition', name:'Coalition cohesion holds', desc:'UK, France, EU Aspides sustain offensive participation', prior:.58, group:1, x:120, y:400},
+  {id:'iran_pos', name:'Iran hardline posture', desc:'IRGC hardliner faction ascendant in Tehran', prior:.45, group:1, x:120, y:540},
+  // Level 2
+  {id:'hvt',        name:'HVT elimination (Tier-2)', desc:'Houthi functional commander (e.g. al-Madani) struck', 
+    parents:[{id:'sustained', w:2.2}, {id:'coalition', w:0.4}], intercept:-1.8, group:2, x:340, y:80},
+  {id:'hou_deg',    name:'Houthi capability degraded', desc:'Attack tempo ≥70% below baseline sustained', 
+    parents:[{id:'sustained', w:1.8}, {id:'hvt', w:1.4}], intercept:-1.0, group:2, x:340, y:200},
+  {id:'vls',        name:'VLS depletion (AOR <35%)', desc:'CENTCOM SM-6/SM-2 inventory strained', 
+    parents:[{id:'sustained', w:1.5}, {id:'iran_pos', w:1.0}], intercept:-1.2, group:2, x:340, y:330},
+  {id:'iran_react', name:'Iran kinetic retaliation', desc:'IRGC/IRGCN conducts direct action against U.S. assets', 
+    parents:[{id:'iran_pos', w:2.0}, {id:'hvt', w:0.8}, {id:'diplomacy', w:-1.5}], intercept:-1.5, group:2, x:340, y:460},
+  {id:'israel',     name:'Israel strikes Iran directly', desc:'IDF executes Fordow/Natanz or Tehran-linked strike', 
+    parents:[{id:'iran_pos', w:1.4}, {id:'iran_react', w:1.0}], intercept:-2.1, group:2, x:340, y:590},
+  // Level 3
+  {id:'hormuz',   name:'Hormuz closure ≥7 days', desc:'Strait becomes non-navigable for commercial traffic', 
+    parents:[{id:'iran_react', w:2.0}, {id:'iran_pos', w:0.8}], intercept:-2.0, group:3, x:580, y:240},
+  {id:'oil',      name:'Brent crude >$120/bbl', desc:'Global oil prices exceed $120 for ≥7 days', 
+    parents:[{id:'hormuz', w:2.5}, {id:'iran_react', w:0.6}, {id:'israel', w:0.9}], intercept:-1.8, group:3, x:580, y:370},
+  {id:'coal_frac',name:'Coalition fragmentation', desc:'France and/or Germany withdraw from offensive OPG', 
+    parents:[{id:'iran_react', w:0.8}, {id:'coalition', w:-2.0}, {id:'hormuz', w:0.5}], intercept:0.2, group:3, x:580, y:500},
+  {id:'escalation',name:'Escalation rung ≥8', desc:'Direct U.S.–Iran kinetic exchange or nuclear signaling', 
+    parents:[{id:'iran_react', w:1.8}, {id:'israel', w:1.6}, {id:'hormuz', w:0.8}], intercept:-2.2, group:3, x:580, y:130},
+  // Level 4 — outcomes
+  {id:'campaign_ext', name:'Campaign >90 days', desc:'Operation Rough Rider extends beyond 90-day envelope', 
+    parents:[{id:'hou_deg', w:-2.0}, {id:'vls', w:1.0}, {id:'coal_frac', w:0.6}], intercept:0.5, group:4, x:820, y:140},
+  {id:'reg_war',   name:'Regional war', desc:'Multi-theater conflict involving Iran, Israel, Gulf states', 
+    parents:[{id:'escalation', w:2.3}, {id:'israel', w:1.4}, {id:'oil', w:0.7}], intercept:-2.5, group:4, x:820, y:280},
+  {id:'econ',      name:'Economic shock', desc:'Global GDP growth revised down; recession risk', 
+    parents:[{id:'oil', w:1.8}, {id:'hormuz', w:1.0}, {id:'reg_war', w:1.2}], intercept:-1.6, group:4, x:820, y:410},
+  {id:'endstate_g',name:'ENDSTATE: Green', desc:'Ceasefire + freedom of navigation restored', 
+    parents:[{id:'diplomacy', w:1.8}, {id:'hou_deg', w:1.2}, {id:'coalition', w:0.9}, {id:'iran_react', w:-1.5}, {id:'escalation', w:-2.0}], intercept:-1.2, group:4, x:820, y:540},
+  {id:'endstate_r',name:'ENDSTATE: Red', desc:'Regional escalation requires broader U.S. commitment', 
+    parents:[{id:'reg_war', w:2.2}, {id:'oil', w:0.6}, {id:'coal_frac', w:0.8}, {id:'escalation', w:1.5}], intercept:-2.0, group:4, x:820, y:640},
+];
+
+// Build index + topological order
+const N = {};
+NODES.forEach(n => { N[n.id] = n; });
+function topoSort(){
+  const visited = {}, order = [];
+  function visit(id){
+    if(visited[id]) return;
+    visited[id] = true;
+    const n = N[id];
+    if(n.parents) n.parents.forEach(p => visit(p.id));
+    order.push(id);
+  }
+  NODES.forEach(n => visit(n.id));
+  return order;
+}
+const ORDER = topoSort();
+
+// All edges (for rendering)
+const EDGES = [];
+NODES.forEach(n => {
+  if(n.parents) n.parents.forEach(p => EDGES.push({from: p.id, to: n.id, w: p.w}));
+});
+
+// ============ Inference ============
+function sigmoid(x){ return 1 / (1 + Math.exp(-x)); }
+
+// Simple seeded RNG
+let RNG_STATE = 42;
+function rng(){ RNG_STATE = (RNG_STATE * 1103515245 + 12345) & 0x7fffffff; return RNG_STATE / 0x7fffffff; }
+function resetRNG(s=42){ RNG_STATE = s; }
+
+/**
+ * Forward Monte Carlo sampling.
+ * @param {Object} interventions - {nodeId: true|false} — clamped nodes (Pearl's do-operator)
+ * @param {number} iters - number of samples
+ * @returns {Object} {nodeId: P(node=TRUE)}
+ */
+function propagate(interventions={}, iters=120){
+  const counts = {};
+  NODES.forEach(n => counts[n.id] = 0);
+  resetRNG(42);
+  const t0 = performance.now();
+  for(let s=0; s<iters; s++){
+    const sample = {};
+    for(const id of ORDER){
+      // Check intervention (do-operator): clamp value, ignore parents
+      if(id in interventions){
+        sample[id] = interventions[id];
+        continue;
+      }
+      const n = N[id];
+      let p;
+      if(n.parents){
+        // Compute P(node=T | parents) from logistic CPT
+        let logit = n.intercept;
+        for(const pn of n.parents){
+          logit += pn.w * (sample[pn.id] ? 1 : 0);
+        }
+        p = sigmoid(logit);
+      } else {
+        // Root: use prior
+        p = n.prior;
+      }
+      sample[id] = rng() < p;
+    }
+    for(const id in sample) if(sample[id]) counts[id]++;
+  }
+  const result = {};
+  for(const id in counts) result[id] = counts[id] / iters;
+  result._ms = performance.now() - t0;
+  return result;
+}
+
+/**
+ * Sensitivity: for each root/unclamped parent, compute Δ P(selected) when
+ * that parent is clamped to TRUE vs FALSE, holding all other interventions.
+ */
+function sensitivity(targetId, interventions, iters=80){
+  const baseT = propagate({...interventions, [targetId]: true}, iters);
+  const baseF = propagate({...interventions, [targetId]: false}, iters);
+  const deltas = [];
+  for(const n of NODES){
+    if(n.id === targetId) continue;
+    if(n.id in interventions) continue;
+    const dT = propagate({...interventions, [n.id]: true}, iters);
+    const dF = propagate({...interventions, [n.id]: false}, iters);
+    const delta = dT[targetId] - dF[targetId];
+    deltas.push({id: n.id, name: n.name, delta});
+  }
+  deltas.sort((a,b) => Math.abs(b.delta) - Math.abs(a.delta));
+  return deltas;
+}
+
+// ============ State ============
+let mode = 'observe';           // observe | intervene | counterfactual
+let interventions = {};         // {nodeId: bool}
+let selectedId = null;
+let beliefs = {};
+let baselineBeliefs = null;     // for counterfactual mode
+let graphState = {zoom:1, x:0, y:0};
+let zoomBy = 1;
+
+// ============ Color mapping ============
+function colorFor(p, isIntervened){
+  if(isIntervened) return '#B8A0FF';
+  if(p > 0.70) return '#7DDBB0';
+  if(p > 0.40) return '#6DD9FF';
+  if(p > 0.20) return '#FFB186';
+  return '#FF7A8A';
+}
+
+// ============ SVG graph rendering ============
+const svg = document.getElementById('graph');
+const W = 900, H = 720; // viewBox
+function updateViewBox(){
+  const vw = W / graphState.zoom;
+  const vh = H / graphState.zoom;
+  svg.setAttribute('viewBox', `${graphState.x} ${graphState.y} ${vw} ${vh}`);
+}
+updateViewBox();
+
+function renderGraph(){
+  let s = '';
+  // Defs: arrow marker + gradient
+  s += `<defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5A6574"/></marker>
+    <marker id="arr-a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6DD9FF"/></marker>
+    <marker id="arr-v" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#B8A0FF"/></marker>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  // Subtle group rectangles as background reference for levels
+  s += `<g opacity="0.04">
+    <rect x="40" y="40" width="180" height="620" fill="#6DD9FF" rx="8"/>
+    <rect x="260" y="40" width="160" height="620" fill="#8EE3FF" rx="8"/>
+    <rect x="480" y="40" width="200" height="620" fill="#B8A0FF" rx="8"/>
+    <rect x="720" y="40" width="180" height="620" fill="#FFB186" rx="8"/>
+  </g>`;
+  s += `<g font-family="JetBrains Mono" font-size="10" fill="#5A6574" opacity="0.6">
+    <text x="130" y="30" text-anchor="middle">LEVEL 1 · ROOTS</text>
+    <text x="340" y="30" text-anchor="middle">LEVEL 2 · DIRECT</text>
+    <text x="580" y="30" text-anchor="middle">LEVEL 3 · PROPAGATED</text>
+    <text x="820" y="30" text-anchor="middle">LEVEL 4 · ENDSTATES</text>
+  </g>`;
+
+  // Render edges
+  for(const e of EDGES){
+    const a = N[e.from], b = N[e.to];
+    // Curved bezier
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
+    // Control point offset perpendicular for gentle curve
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const perpX = -dy / len * 12;
+    const perpY = dx / len * 12;
+    const cx = mx + perpX, cy = my + perpY;
+    // Line terminates at edge of target circle (r=28)
+    const ang = Math.atan2(b.y - cy, b.x - cx);
+    const tx = b.x - Math.cos(ang) * 32;
+    const ty = b.y - Math.sin(ang) * 32;
+    const sx = a.x + Math.cos(Math.atan2(cy - a.y, cx - a.x)) * 32;
+    const sy = a.y + Math.sin(Math.atan2(cy - a.y, cx - a.x)) * 32;
+    const sourceIntervened = e.from in interventions;
+    const isSelEdge = selectedId === e.from || selectedId === e.to;
+    // Edge stroke
+    let strokeCol = '#2B3446', sw = 1, dash = '', marker = 'arr';
+    if(sourceIntervened){ strokeCol = '#B8A0FF'; sw = 1.8; marker = 'arr-v'; }
+    if(isSelEdge){ strokeCol = '#6DD9FF'; sw = 1.8; marker = 'arr-a'; }
+    if(e.w < 0){ dash = '4 3'; }
+    const opa = isSelEdge ? 0.95 : 0.45;
+    s += `<path d="M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}" stroke="${strokeCol}" stroke-width="${sw}" fill="none" opacity="${opa}" marker-end="url(#${marker})" stroke-dasharray="${dash}"/>`;
+    // Edge weight label
+    if(isSelEdge){
+      const lcx = cx + perpX*0.5, lcy = cy + perpY*0.5;
+      const wLbl = (e.w >= 0 ? '+' : '') + e.w.toFixed(1);
+      s += `<text x="${lcx}" y="${lcy}" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="${e.w >= 0 ? '#7DDBB0' : '#FF7A8A'}">${wLbl}</text>`;
+    }
+  }
+
+  // Render nodes
+  for(const n of NODES){
+    const p = beliefs[n.id] || 0;
+    const isInt = n.id in interventions;
+    const col = colorFor(p, isInt);
+    const isSel = selectedId === n.id;
+    const ringR = 28 + (isSel ? 4 : 0);
+    // Counterfactual delta indicator
+    let cfDelta = null;
+    if(mode === 'counterfactual' && baselineBeliefs){
+      cfDelta = p - baselineBeliefs[n.id];
+    }
+    // Selection ring
+    if(isSel){
+      s += `<circle cx="${n.x}" cy="${n.y}" r="${ringR + 6}" fill="none" stroke="#6DD9FF" stroke-width="1.5" opacity="0.35"/>`;
+    }
+    // Node base circle
+    s += `<circle class="node" data-id="${n.id}" cx="${n.x}" cy="${n.y}" r="${ringR}" fill="#0F141D" stroke="${col}" stroke-width="${isInt ? 3 : 2}" style="cursor:pointer" filter="${isSel ? 'url(#glow)' : ''}"/>`;
+    // Probability fill arc (pie-style: fill angle proportional to P)
+    const arcAngle = p * 2 * Math.PI;
+    if(p > 0.02){
+      const startAng = -Math.PI / 2;
+      const endAng = startAng + arcAngle;
+      const x1 = n.x + Math.cos(startAng) * ringR;
+      const y1 = n.y + Math.sin(startAng) * ringR;
+      const x2 = n.x + Math.cos(endAng) * ringR;
+      const y2 = n.y + Math.sin(endAng) * ringR;
+      const large = arcAngle > Math.PI ? 1 : 0;
+      s += `<path d="M ${n.x} ${n.y} L ${x1} ${y1} A ${ringR} ${ringR} 0 ${large} 1 ${x2} ${y2} Z" fill="${col}" opacity="0.22" style="pointer-events:none"/>`;
+    }
+    // Intervention indicator (inner dot)
+    if(isInt){
+      s += `<circle cx="${n.x}" cy="${n.y - ringR - 8}" r="5" fill="${interventions[n.id] ? '#7DDBB0' : '#FF7A8A'}" style="pointer-events:none"/>`;
+      s += `<text x="${n.x}" y="${n.y - ringR - 4}" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="${interventions[n.id] ? '#7DDBB0' : '#FF7A8A'}" style="pointer-events:none">do=${interventions[n.id] ? 'T' : 'F'}</text>`;
+    }
+    // Probability label inside
+    s += `<text x="${n.x}" y="${n.y - 3}" text-anchor="middle" font-family="Instrument Serif" font-size="20" fill="${col}" style="pointer-events:none;font-weight:400">${(p*100).toFixed(0)}</text>`;
+    s += `<text x="${n.x}" y="${n.y + 10}" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#5A6574" style="pointer-events:none">%</text>`;
+    // Counterfactual delta
+    if(cfDelta !== null && Math.abs(cfDelta) > 0.02){
+      const dStr = (cfDelta >= 0 ? '+' : '') + (cfDelta*100).toFixed(0);
+      const dCol = cfDelta > 0 ? '#7DDBB0' : '#FF7A8A';
+      s += `<text x="${n.x}" y="${n.y + ringR + 14}" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="${dCol}" style="pointer-events:none;font-weight:600">Δ ${dStr}pp</text>`;
+    }
+    // Name label below
+    const nameText = n.name.length > 24 ? n.name.slice(0, 22) + '…' : n.name;
+    s += `<text x="${n.x}" y="${n.y + (cfDelta !== null && Math.abs(cfDelta) > 0.02 ? ringR + 30 : ringR + 14)}" text-anchor="middle" font-family="Inter" font-size="10.5" fill="#C8D0DC" style="pointer-events:none">${nameText}</text>`;
+  }
+  svg.innerHTML = s;
+  // Wire clicks
+  svg.querySelectorAll('.node').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    onNodeClick(el.dataset.id);
+  }));
+}
+
+function onNodeClick(id){
+  if(mode === 'intervene'){
+    // Cycle: unset → T → F → unset
+    if(!(id in interventions)) interventions[id] = true;
+    else if(interventions[id] === true) interventions[id] = false;
+    else delete interventions[id];
+    runInference();
+    selectedId = id;
+  } else {
+    selectedId = id;
+    renderGraph();
+    renderNodeList();
+    renderInspector();
+  }
+}
+
+// ============ Inference orchestration ============
+function runInference(){
+  const iters = +document.getElementById('s-iter').value;
+  if(mode === 'counterfactual' && Object.keys(interventions).length === 0){
+    // Lock baseline
+    baselineBeliefs = propagate({}, iters);
+    beliefs = {...baselineBeliefs};
+  } else if(mode === 'counterfactual'){
+    // Baseline is already set; compute intervened
+    beliefs = propagate(interventions, iters);
+  } else {
+    beliefs = propagate(interventions, iters);
+    baselineBeliefs = null;
+  }
+  document.getElementById('iter-count').textContent = `${beliefs._ms.toFixed(1)} ms · ${iters} samples`;
+  document.getElementById('c-inv').textContent = `${Object.keys(interventions).length} intervention${Object.keys(interventions).length !== 1 ? 's' : ''}`;
+  renderGraph();
+  renderNodeList();
+  renderInspector();
+}
+
+// ============ Node list ============
+function renderNodeList(){
+  const list = document.getElementById('nlist');
+  const sorted = [...NODES].sort((a,b) => (beliefs[b.id] || 0) - (beliefs[a.id] || 0));
+  list.innerHTML = sorted.map(n => {
+    const p = beliefs[n.id] || 0;
+    const isInt = n.id in interventions;
+    const clampLbl = isInt ? `<span class="clamp ${interventions[n.id] ? 't' : 'f'}">do=${interventions[n.id] ? 'T' : 'F'}</span>` : '';
+    const cls = selectedId === n.id ? 'sel' : '';
+    return `<div class="node-ctrl ${cls}" data-id="${n.id}">
+      <div class="h"><span class="n">${n.name}</span><span class="p" style="color:${colorFor(p, isInt)}">${(p*100).toFixed(0)}%</span></div>
+      <div class="bar"><span class="bar-fill" style="width:${p*100}%;background:${colorFor(p, isInt)}"></span></div>
+      ${clampLbl ? `<div style="margin-top:5px">${clampLbl}</div>` : ''}
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.node-ctrl').forEach(el => el.addEventListener('click', () => {
+    selectedId = el.dataset.id; renderGraph(); renderNodeList(); renderInspector();
+  }));
+}
+
+// ============ Inspector ============
+function renderInspector(){
+  const insp = document.getElementById('insp');
+  const eye = document.getElementById('insp-eye');
+  const title = document.getElementById('insp-title');
+  const sub = document.getElementById('insp-sub');
+  if(!selectedId){
+    eye.textContent = 'INSPECTOR';
+    title.textContent = 'No selection';
+    sub.textContent = 'Click a node to inspect its parents, CPT, belief, and sensitivity to upstream interventions.';
+    insp.innerHTML = '';
+    return;
+  }
+  const n = N[selectedId];
+  const p = beliefs[n.id] || 0;
+  const isInt = n.id in interventions;
+  eye.textContent = `LEVEL ${n.group} · ${n.parents ? 'DERIVED' : 'ROOT'}`;
+  title.innerHTML = `<i>${n.name}</i>`;
+  sub.textContent = n.desc;
+
+  let html = '';
+  // Actions
+  html += `<div class="actions">
+    <button class="${isInt && interventions[selectedId] === true ? 'at' : ''}" data-act="true">do( = TRUE )</button>
+    <button class="${isInt && interventions[selectedId] === false ? 'af' : ''}" data-act="false">do( = FALSE )</button>
+    ${isInt ? `<button class="ac" data-act="clear">Clear</button>` : ''}
+  </div>`;
+
+  // Summary
+  const cfDelta = mode === 'counterfactual' && baselineBeliefs ? p - (baselineBeliefs[n.id] || 0) : null;
+  html += `<dl class="dl">
+    <dt>P(node = T)</dt><dd class="a">${(p*100).toFixed(1)}%</dd>
+    <dt>State</dt><dd class="${isInt ? 'v' : (p > .5 ? 'g' : 'r')}">${isInt ? `CLAMPED ${interventions[selectedId] ? 'TRUE' : 'FALSE'}` : (p > .5 ? 'PROBABLE' : 'IMPROBABLE')}</dd>
+    <dt>Group</dt><dd>Level ${n.group} (${n.parents ? 'derived' : 'root'})</dd>
+    <dt>Parents</dt><dd>${n.parents ? n.parents.length : 0}</dd>
+    ${cfDelta !== null ? `<dt>CF Δ vs baseline</dt><dd class="${cfDelta > 0 ? 'g' : 'r'}">${cfDelta >= 0 ? '+' : ''}${(cfDelta*100).toFixed(1)}pp</dd>` : ''}
+    ${n.intercept !== undefined ? `<dt>Intercept (α)</dt><dd>${n.intercept.toFixed(2)}</dd>` : ''}
+    ${n.prior !== undefined ? `<dt>Prior P</dt><dd>${(n.prior*100).toFixed(0)}%</dd>` : ''}
+  </dl>`;
+
+  // CPT
+  if(n.parents){
+    html += `<div class="cpt"><h5>CAUSAL PARENTS · CPT WEIGHTS</h5>`;
+    for(const pn of n.parents){
+      const pName = N[pn.id].name;
+      html += `<div class="cpt-row"><span class="p">${pName}</span><span class="v">${pn.w >= 0 ? '+' : ''}${pn.w.toFixed(2)}</span></div>`;
+    }
+    html += `</div>`;
+    html += `<div style="font-family:var(--mono);font-size:10px;color:var(--ink-4);margin:-6px 0 14px;line-height:1.5">P = σ(α + Σ wᵢ · parentᵢ). Positive weight = excitatory; negative = inhibitory (shown dashed on graph).</div>`;
+  } else {
+    html += `<div class="cpt"><h5>ROOT NODE</h5><div class="cpt-row"><span class="p">No parents · prior used directly</span><span class="v">${(n.prior*100).toFixed(0)}%</span></div></div>`;
+  }
+
+  // Sensitivity
+  const iters = Math.min(80, +document.getElementById('s-iter').value);
+  const sens = sensitivity(selectedId, interventions, iters);
+  const top5 = sens.slice(0, 8);
+  html += `<div class="sensi"><h5>SENSITIVITY · Δ IF CLAMPED (top 8)</h5>`;
+  const maxAbs = Math.max(...top5.map(s => Math.abs(s.delta)), 0.01);
+  for(const s of top5){
+    const magPct = Math.abs(s.delta) / maxAbs * 100;
+    const dLbl = (s.delta >= 0 ? '+' : '') + (s.delta * 100).toFixed(1);
+    const neg = s.delta < 0;
+    html += `<div class="srow">
+      <span class="n">${N[s.id].name}</span>
+      <span class="b"><span class="f ${neg ? 'neg' : ''}" style="width:${magPct}%;${neg ? 'right:50%;left:auto' : 'left:50%'}"></span></span>
+      <span class="v ${neg ? 'neg' : ''}">${dLbl}pp</span>
+    </div>`;
+  }
+  html += `</div>`;
+  html += `<div style="font-family:var(--mono);font-size:10px;color:var(--ink-4);margin-top:8px;line-height:1.5">Δ shows P(${n.name}) if each other node were clamped TRUE vs FALSE. Measures true causal leverage over this outcome.</div>`;
+
+  insp.innerHTML = html;
+  insp.querySelectorAll('button[data-act]').forEach(b => b.addEventListener('click', () => {
+    const act = b.dataset.act;
+    if(act === 'clear') delete interventions[selectedId];
+    else interventions[selectedId] = act === 'true';
+    runInference();
+  }));
+}
+
+// ============ Mode handling ============
+document.querySelectorAll('#mode button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#mode button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  mode = b.dataset.m;
+  const hints = {
+    observe: 'Observational: marginal probabilities from priors alone.',
+    intervene: 'Click any node on the graph to toggle do(TRUE → FALSE → observe).',
+    counterfactual: 'First propagation locks baseline. Interventions compute counterfactual Δ (shown per-node).',
+  };
+  document.getElementById('mode-hint').textContent = hints[mode];
+  document.getElementById('c-mode').textContent = mode.toUpperCase() + (mode === 'counterfactual' ? ' · Δ mode' : ' · marginal');
+  document.getElementById('c-cf').style.display = mode === 'counterfactual' ? '' : 'none';
+  if(mode === 'counterfactual'){
+    baselineBeliefs = null;
+    runInference(); // locks baseline on first run
+  } else {
+    baselineBeliefs = null;
+    runInference();
+  }
+}));
+
+// ============ Controls ============
+document.getElementById('s-iter').addEventListener('input', e => {
+  document.getElementById('v-iter').textContent = e.target.value;
+});
+document.getElementById('btn-run').addEventListener('click', runInference);
+document.getElementById('btn-clear').addEventListener('click', () => {
+  interventions = {};
+  runInference();
+});
+
+// Scenario shortcuts
+document.querySelectorAll('.scenarios button').forEach(b => b.addEventListener('click', () => {
+  interventions = {};
+  const sc = b.dataset.sc;
+  if(sc === 'strike'){ interventions['sustained'] = true; selectedId = 'sustained'; }
+  else if(sc === 'dip'){ interventions['diplomacy'] = true; selectedId = 'diplomacy'; }
+  else if(sc === 'hormuz'){ interventions['hormuz'] = true; interventions['iran_pos'] = true; selectedId = 'hormuz'; }
+  else if(sc === 'coalition'){ interventions['coalition'] = false; selectedId = 'coalition'; }
+  if(mode !== 'intervene' && mode !== 'counterfactual'){
+    document.querySelectorAll('#mode button').forEach(x => x.classList.toggle('on', x.dataset.m === 'intervene'));
+    mode = 'intervene';
+    document.getElementById('mode-hint').textContent = 'Click any node on the graph to toggle do(TRUE → FALSE → observe).';
+    document.getElementById('c-mode').textContent = 'INTERVENE · marginal';
+  }
+  runInference();
+}));
+
+// ============ Zoom + pan ============
+document.getElementById('z-in').addEventListener('click', () => { graphState.zoom = Math.min(3, graphState.zoom * 1.25); updateViewBox(); });
+document.getElementById('z-out').addEventListener('click', () => { graphState.zoom = Math.max(0.5, graphState.zoom / 1.25); updateViewBox(); });
+document.getElementById('z-reset').addEventListener('click', () => { graphState = {zoom:1, x:0, y:0}; updateViewBox(); });
+
+// Pan + zoom via mouse
+let pan = null;
+svg.addEventListener('mousedown', e => {
+  if(e.target.classList.contains('node')) return;
+  pan = {x: e.clientX, y: e.clientY, sx: graphState.x, sy: graphState.y};
+  svg.classList.add('drag');
+});
+window.addEventListener('mouseup', () => { pan = null; svg.classList.remove('drag'); });
+window.addEventListener('mousemove', e => {
+  if(!pan) return;
+  const rect = svg.getBoundingClientRect();
+  const scale = W / rect.width / graphState.zoom;
+  graphState.x = pan.sx - (e.clientX - pan.x) * scale;
+  graphState.y = pan.sy - (e.clientY - pan.y) * scale;
+  updateViewBox();
+});
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const f = e.deltaY > 0 ? 0.9 : 1.1;
+  graphState.zoom = Math.max(0.5, Math.min(3, graphState.zoom * f));
+  updateViewBox();
+}, {passive:false});
+
+// Deselect on background click
+svg.addEventListener('click', e => {
+  if(!e.target.classList.contains('node')){
+    selectedId = null;
+    renderGraph();
+    renderNodeList();
+    renderInspector();
+  }
+});
+
+// ============ Initial run ============
+runInference();
+// Pre-select end-state green for a quick demo
+setTimeout(() => { selectedId = 'endstate_g'; renderGraph(); renderNodeList(); renderInspector(); }, 300);
+</script>
+</body>
+</html>
